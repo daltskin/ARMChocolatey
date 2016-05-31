@@ -3,7 +3,6 @@ cls
 
 New-Item "c:\jdchoco" -type Directory -force
 $LogFile = "c:\jdchoco\JDScript.log"
-write-host $LogFile 
 
 # Get username/password & machine name
 $userName = "artifactInstaller"
@@ -27,28 +26,31 @@ $secPassword = ConvertTo-SecureString $password -AsPlainText -Force
 $credential = New-Object System.Management.Automation.PSCredential("$env:COMPUTERNAME\$($username)", $secPassword)
 
 # Ensure that current process can run scripts. 
-"Enabling remoting" | Out-File $LogFile -Append
+#"Enabling remoting" | Out-File $LogFile -Append
 Enable-PSRemoting -Force -SkipNetworkProfileCheck
 
-"Changing ExecutionPolicy" | Out-File $LogFile -Append
+#"Changing ExecutionPolicy" | Out-File $LogFile -Append
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 
 # Install Choco under the artifact user's profile | TODO
-"Installing Chocolatey" | Out-File $LogFile -Append
+#"Installing Chocolatey" | Out-File $LogFile -Append
 $sb = { iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1')) }
 Invoke-Command -ScriptBlock $sb -ComputerName $env:COMPUTERNAME -Credential $credential | Out-Null
 
-"Disabling UAC" | Out-File $LogFile -Append
+
+#"Disalbing UAC" | Out-File $LogFile -Append
 $sb = { Set-ItemProperty -path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System -name EnableLua -value 0 }
 Invoke-Command -ScriptBlock $sb -ComputerName $env:COMPUTERNAME -Credential $credential
 
-"Install Chocolatey Packages:" | Out-File $LogFile -Append
-$command = "cinst " + $chocoPackages + " -y -force"
-$command | Out-File $LogFile -Append
-$sb = [scriptblock]::Create("$command")
-Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages -ComputerName $env:COMPUTERNAME -Credential $credential | Write-Output
+#"Install Chocolatey Packages:" | Out-File $LogFile -Append
+$chocoPackages.Split(";") | ForEach {
 
-"Disable PSRemoting" | Out-File $LogFile -Append
+    $command = "cinst " + $_ + " -y -force"
+    $sb = [scriptblock]::Create("$command")
+    Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages -ComputerName $env:COMPUTERNAME -Credential $credential | Write-Output
+}
+
+#"Disable PSRemoting" | Out-File $LogFile -Append
 Disable-PSRemoting -Force
 
 # Delete the artifactInstaller user
