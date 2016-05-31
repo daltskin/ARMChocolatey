@@ -1,14 +1,15 @@
 param([Parameter(Mandatory=$true)][string]$chocoPackages)
 cls
 
-New-Item "c:\jdchoco" -type Directory -force
+New-Item "c:\jdchoco" -type Directory -force | Out-Null
+
 $LogFile = "c:\jdchoco\JDScript.log"
 
 $chocoPackages | Out-File $LogFile -Append
 
 # Get username/password & machine name
 $userName = "artifactInstaller"
-[Reflection.Assembly]::LoadWithPartialName("System.Web") 
+[Reflection.Assembly]::LoadWithPartialName("System.Web") | Out-Null
 $password = $([System.Web.Security.Membership]::GeneratePassword(12,4))
 $cn = [ADSI]"WinNT://$env:ComputerName"
 
@@ -43,11 +44,14 @@ Invoke-Command -ScriptBlock $sb -ComputerName $env:COMPUTERNAME -Credential $cre
 $sb = { Set-ItemProperty -path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System -name EnableLua -value 0 }
 Invoke-Command -ScriptBlock $sb -ComputerName $env:COMPUTERNAME -Credential $credential
 
-#"Install Chocolatey Packages:" | Out-File $LogFile -Append
+#"Install each Chocolatey Package"
 $chocoPackages.Split(";") | ForEach {
-    $command = "cinst " + $_ + " -y -force" | Out-File $LogFile -Append
+    $command = "cinst " + $_ + " -y -force"
+    $command | Out-File $LogFile -Append
     $sb = [scriptblock]::Create("$command")
-    Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages -ComputerName $env:COMPUTERNAME -Credential $credential | Write-Output
+
+    # Use the current user profile
+    Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages -ComputerName $env:COMPUTERNAME #-Credential $credential | Out-Null
 }
 
 #"Disable PSRemoting" | Out-File $LogFile -Append
