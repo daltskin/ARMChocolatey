@@ -4,6 +4,8 @@ cls
 New-Item "c:\jdchoco" -type Directory -force
 $LogFile = "c:\jdchoco\JDScript.log"
 
+$chocoPackages | Out-File $LogFile -Append
+
 # Get username/password & machine name
 $userName = "artifactInstaller"
 [Reflection.Assembly]::LoadWithPartialName("System.Web") 
@@ -37,15 +39,13 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 $sb = { iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1')) }
 Invoke-Command -ScriptBlock $sb -ComputerName $env:COMPUTERNAME -Credential $credential | Out-Null
 
-
 #"Disalbing UAC" | Out-File $LogFile -Append
 $sb = { Set-ItemProperty -path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System -name EnableLua -value 0 }
 Invoke-Command -ScriptBlock $sb -ComputerName $env:COMPUTERNAME -Credential $credential
 
 #"Install Chocolatey Packages:" | Out-File $LogFile -Append
 $chocoPackages.Split(";") | ForEach {
-
-    $command = "cinst " + $_ + " -y -force"
+    $command = "cinst " + $_ + " -y -force" | Out-File $LogFile -Append
     $sb = [scriptblock]::Create("$command")
     Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages -ComputerName $env:COMPUTERNAME -Credential $credential | Write-Output
 }
