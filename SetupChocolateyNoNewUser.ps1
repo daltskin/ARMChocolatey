@@ -2,9 +2,7 @@ param([Parameter(Mandatory=$true)][string]$chocoPackages)
 cls
 
 New-Item "c:\jdchoco" -type Directory -force | Out-Null
-
 $LogFile = "c:\jdchoco\JDScript.log"
-
 $chocoPackages | Out-File $LogFile -Append
 
 # Get username/password & machine name
@@ -29,18 +27,18 @@ $secPassword = ConvertTo-SecureString $password -AsPlainText -Force
 $credential = New-Object System.Management.Automation.PSCredential("$env:COMPUTERNAME\$($username)", $secPassword)
 
 # Ensure that current process can run scripts. 
-#"Enabling remoting" | Out-File $LogFile -Append
+"Enabling remoting" | Out-File $LogFile -Append
 Enable-PSRemoting -Force -SkipNetworkProfileCheck
 
-#"Changing ExecutionPolicy" | Out-File $LogFile -Append
+"Changing ExecutionPolicy" | Out-File $LogFile -Append
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 
 # Install Choco under the artifact user's profile | TODO
-#"Installing Chocolatey" | Out-File $LogFile -Append
+"Installing Chocolatey" | Out-File $LogFile -Append
 $sb = { iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1')) }
 Invoke-Command -ScriptBlock $sb -ComputerName $env:COMPUTERNAME -Credential $credential | Out-Null
 
-#"Disalbing UAC" | Out-File $LogFile -Append
+#"Disabling UAC" | Out-File $LogFile -Append
 $sb = { Set-ItemProperty -path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System -name EnableLua -value 0 }
 Invoke-Command -ScriptBlock $sb -ComputerName $env:COMPUTERNAME -Credential $credential
 
@@ -54,11 +52,10 @@ $chocoPackages.Split(";") | ForEach {
     Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages -ComputerName $env:COMPUTERNAME -Credential $credential | Out-Null
 }
 
-#"Disable PSRemoting" | Out-File $LogFile -Append
 Disable-PSRemoting -Force
 
 # Delete the artifactInstaller user
 $cn.Delete("User", $userName)
 
 # Delete the artifactInstaller user profile
-#gwmi win32_userprofile | where { $_.LocalPath -like "*$userName*" } | foreach { $_.Delete() }
+gwmi win32_userprofile | where { $_.LocalPath -like "*$userName*" } | foreach { $_.Delete() }
