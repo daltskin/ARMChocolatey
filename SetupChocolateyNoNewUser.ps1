@@ -30,7 +30,7 @@ $credential = New-Object System.Management.Automation.PSCredential("$env:COMPUTE
 
 # Ensure that current process can run scripts. 
 #"Enabling remoting" | Out-File $LogFile -Append
-Enable-PSRemoting -Force -SkipNetworkProfileCheck
+#Enable-PSRemoting -Force -SkipNetworkProfileCheck
 
 #"Changing ExecutionPolicy" | Out-File $LogFile -Append
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
@@ -55,7 +55,7 @@ $chocoPackages.Split(";") | ForEach {
 }
 
 #"Disable PSRemoting" | Out-File $LogFile -Append
-Disable-PSRemoting -Force
+#Disable-PSRemoting -Force
 
 # Delete the artifactInstaller user
 #$cn.Delete("User", $userName)
