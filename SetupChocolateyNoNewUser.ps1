@@ -51,7 +51,7 @@ $chocoPackages.Split(";") | ForEach {
     $sb = [scriptblock]::Create("$command")
 
     # Use the current user profile
-    Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages -ComputerName $env:COMPUTERNAME #-Credential $credential | Out-Null
+    Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages # -ComputerName $env:COMPUTERNAME#-Credential $credential | Out-Null
 }
 
 #"Disable PSRemoting" | Out-File $LogFile -Append
