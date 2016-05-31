@@ -51,14 +51,14 @@ $chocoPackages.Split(";") | ForEach {
     $sb = [scriptblock]::Create("$command")
 
     # Use the current user profile
-    Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages # -ComputerName $env:COMPUTERNAME#-Credential $credential | Out-Null
+    Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages -ComputerName $env:COMPUTERNAME -Credential $credential | Out-Null
 }
 
 #"Disable PSRemoting" | Out-File $LogFile -Append
 Disable-PSRemoting -Force
 
 # Delete the artifactInstaller user
-$cn.Delete("User", $userName)
+#$cn.Delete("User", $userName)
 
 # Delete the artifactInstaller user profile
-gwmi win32_userprofile | where { $_.LocalPath -like "*$userName*" } | foreach { $_.Delete() }
+#gwmi win32_userprofile | where { $_.LocalPath -like "*$userName*" } | foreach { $_.Delete() }
