@@ -20,7 +20,7 @@ function IsUacEnabled
 
 
 # Check to see if we are currently running "as Administrator"
-if (IsAdministrator)
+if (!(IsAdministrator))
 {
     "Not running as admin" | Out-File $LogFile -Append
    # We are running "as Administrator" - so change the title and background color to indicate this
