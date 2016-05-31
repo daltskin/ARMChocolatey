@@ -1,71 +1,58 @@
-﻿param([Parameter(Mandatory=$true)][string]$chocoPackages)
-
+param([Parameter(Mandatory=$true)][string]$chocoPackages)
 cls
 
 New-Item "c:\jdchoco" -type Directory -force
 $LogFile = "c:\jdchoco\JDScript.log"
 write-host $LogFile 
 
-function IsAdministrator
-{
-    $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-    $Principal = New-Object System.Security.Principal.WindowsPrincipal($Identity)
-    $Principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-}
+# Get username/password & machine name
+$userName = "artifactInstaller"
+[Reflection.Assembly]::LoadWithPartialName("System.Web") 
+$password = $([System.Web.Security.Membership]::GeneratePassword(12,4))
+$cn = [ADSI]"WinNT://$env:ComputerName"
 
-function IsUacEnabled
-{
-    (Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System).EnableLua -ne 0
-}
+# Create new user
+$user = $cn.Create("User", $userName)
+$user.SetPassword($password)
+$user.SetInfo()
+$user.description = "Choco artifact installer"
+$user.SetInfo()
 
+# Add user to the Administrators group
+$group = [ADSI]"WinNT://$env:ComputerName/Administrators,group"
+$group.add("WinNT://$env:ComputerName/$userName")
 
-# Check to see if we are currently running "as Administrator"
-if (!(IsAdministrator))
-{
-    "Not running as admin" | Out-File $LogFile -Append
-   # We are running "as Administrator" - so change the title and background color to indicate this
-   $Host.UI.RawUI.WindowTitle = $myInvocation.MyCommand.Definition + "(Elevated)"
-   $Host.UI.RawUI.BackgroundColor = "DarkBlue"
-   clear-host
-}
-else
-{
-    "Runnning as admin" | Out-File $LogFile -Append
+# Create pwd and new $creds for remoting
+$secPassword = ConvertTo-SecureString $password -AsPlainText -Force
+$credential = New-Object System.Management.Automation.PSCredential("$env:COMPUTERNAME\$($username)", $secPassword)
 
-   # We are not running "as Administrator" - so relaunch as administrator
-   if (IsUacEnabled)
-   {
-        "UAC Enabled" | Out-File $LogFile -Append
+# Ensure that current process can run scripts. 
+"Enabling remoting" | Out-File $LogFile -Append
+Enable-PSRemoting -Force -SkipNetworkProfileCheck
 
+"Changing ExecutionPolicy" | Out-File $LogFile -Append
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 
-        "Installing Choco" | Out-File $LogFile -Append
-        # Grab the choco installation script
-        iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+# Install Choco under the artifact user's profile | TODO
+"Installing Chocolatey" | Out-File $LogFile -Append
+$sb = { iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1')) }
+Invoke-Command -ScriptBlock $sb -ComputerName $env:COMPUTERNAME -Credential $credential | Out-Null
 
-        [string[]]$argList = @('-NoProfile', '-NoExit', '-File', $MyInvocation.MyCommand.Path)
-        $argList += $MyInvocation.BoundParameters.GetEnumerator() | Foreach {"-$($_.Key)", "$($_.Value)"}
-        $argList += $MyInvocation.UnboundArguments
-        Start-Process PowerShell.exe -Verb Runas -WorkingDirectory $pwd -ArgumentList $argList
+"Disabling UAC" | Out-File $LogFile -Append
+$sb = { Set-ItemProperty -path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System -name EnableLua -value 0 }
+Invoke-Command -ScriptBlock $sb -ComputerName $env:COMPUTERNAME -Credential $credential
 
-        "Now running elevated" | Out-File $LogFile -Append
-   }
-   else
-   {
-        "UAC is not Enabled" | Out-File $LogFile -Append
-   }
-}
- 
- Try
- {
-    cinst $chocoPackages -y -f
- }
- Catch
- {
-    "Error (caught)" | Out-File $LogFile -Append
-    $_.Exception.Message | Out-File $LogFile -Append
-    $_.Exception.ItemName | Out-File $LogFile -Append
- }
+"Install Chocolatey Packages:" | Out-File $LogFile -Append
+$command = "cinst " + $chocoPackages + " -y -force"
+$command | Out-File $LogFile -Append
+$sb = [scriptblock]::Create("$command")
+Invoke-Command -ScriptBlock $sb -ArgumentList $chocoPackages -ComputerName $env:COMPUTERNAME -Credential $credential | Write-Output
 
- "Finished" | Out-File $LogFile -Append   
+"Disable PSRemoting" | Out-File $LogFile -Append
+Disable-PSRemoting -Force
 
+# Delete the artifactInstaller user
+$cn.Delete("User", $userName)
 
+# Delete the artifactInstaller user profile
+gwmi win32_userprofile | where { $_.LocalPath -like "*$userName*" } | foreach { $_.Delete() }
