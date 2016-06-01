@@ -2,13 +2,7 @@
   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.1",
   "parameters": {
-    "storageName": {
-      "type": "string",
-      "metadata": {
-        "description": "Globally unique storage account name"
-      }
-    },
-    "storageType": {
+      "storageType": {
       "type": "string",
       "defaultValue": "Premium_LRS",
       "allowedValues": [
@@ -17,21 +11,6 @@
       ],
       "metadata": {
         "description": "Which type of storage you want to use"
-      }
-    },
-    "deployLocation": {
-      "type": "string",
-      "allowedValues": [
-        "East US 2",
-        "West US",
-        "West Europe",
-        "South East Asia",
-        "Japan East",
-        "Japan West",
-        "Australia East"
-      ],
-      "metadata": {
-        "description": "Which datacenter you would like to deploy to? Only locations where premium storage are supported are listed. See azure.microsoft.com/en-us/regions/#services"
       }
     },
     "vmName": {
@@ -61,33 +40,24 @@
     },
     "vmVisualStudioVersion": {
       "type": "string",
-      "defaultValue": "VS-2015-Comm-VSU1-AzureSDK-2.8-W10T-1511-N-x64",
+      "defaultValue": "VS-2015-Ent-VSU2-AzureSDK-29-W10T-N-x64",
       "allowedValues": [
-        "VS-2015-Comm-AzureSDK-2.8-Cordova-Win8.1-N-x64",
-        "VS-2015-Comm-AzureSDK-2.8-WS2012R2",
-        "VS-2015-Comm-AzureSDK-2.8-WS2012R2.1",
-        "VS-2015-Comm-AzureSDK-2.8-WS2012R2.2",
-        "VS-2015-Comm-VSU1-AzureSDK-2.8-W10T-1511-N-x64",
+        "VS-2015-Comm-AzureSDK-2.9-W10T-Win10-N",
+        "VS-2015-Comm-AzureSDK-2.9-WS2012R2",
         "VS-2015-Comm-VSU1-AzureSDK-2.8-W10T-N-x64",
-        "VS-2015-Comm-VSU1-AzureSDK-2.8-WS2012R2",
-        "VS-2015-Comm-VSU1-AzureSDK-2.8-WS2012R2.1",
+        "VS-2015-Comm-VSU2-AzureSDK-29-W10T-N-x64",
+        "VS-2015-Comm-VSU2-AzureSDK-29-WS2012R2",
         "VS-2015-Community-AzureSDK-2.7-Cordova-Win8.1-N-x64",
         "VS-2015-Community-AzureSDK-2.7-W10T-Win10-N",
         "VS-2015-Community-AzureSDK-2.7-WS2012R2",
         "VS-2015-Ent-AzureSDK-2.8-Cordova-Win8.1-N-x64",
-        "VS-2015-Ent-AzureSDK-2.8-WS2012R2",
-        "VS-2015-Ent-AzureSDK-2.8-WS2012R2.2",
-        "VS-2015-Ent-VSU1-AzureSDK-2.8-W10T-1511-N-x64",
-        "VS-2015-Ent-VSU1-AzureSDK-2.8-W10T-N-x64",
-        "VS-2015-Ent-VSU1-AzureSDK-2.8-WS2012R2",
-        "VS-2015-Ent-VSU1-AzureSDK-2.8-WS2012R2.1",
-        "VS-2015-Ent-VSU1-AzureSDK-2.8-WS2012R2.2",
+        "VS-2015-Ent-AzureSDK-29-W10T-Win10-N",
+        "VS-2015-Ent-VSU2-AzureSDK-29-W10T-N-x64",
+        "VS-2015-Ent-VSU2-AzureSDK-29-WS2012R2",
         "VS-2015-Enterprise-AzureSDK-2.7-Cordova-Win8.1-N-x64",
         "VS-2015-Enterprise-AzureSDK-2.7-W10T-Win10-N",
         "VS-2015-Enterprise-AzureSDK-2.7-WS2012R2",
         "VS-2015-Pro-AzureSDK-2.8-Cordova-Win8.1-N-x64",
-        "VS-2015-Pro-VSU1-AzureSDK-2.8-W10T-1511-N-x64",
-        "VS-2015-Pro-VSU1-AzureSDK-2.8-W10T-N-x64",
         "VS-2015-Professional-AzureSDK-2.7-Cordova-Win8.1-N-x64",
         "VS-2015-Professional-AzureSDK-2.7-W10T-Win10-N"
       ],
@@ -95,10 +65,10 @@
         "description": "Which version of Visual Studio you would like to deploy"
       }
     },
-    "vmIPPublicDnsName": {
+    "dnsLabelPrefix": {
       "type": "string",
       "metadata": {
-        "description": "Globally unique name for per region for the public IP address. For instance, myVMuniqueIP.westus.cloudapp.azure.com. It must conform to the following regular expression: ^[a-z][a-z0-9-]{1,61}[a-z0-9]$."
+      "description": "DNS Label for the Public IP. Must be lowercase. It should match with the following regular expression: ^[a-z][a-z0-9-]{1,61}[a-z0-9]$ or it will raise an error."
       }
     },
     "chocoPackages": {
@@ -109,7 +79,7 @@
     },
     "setupChocolateyScriptFileName": {
       "type": "string",
-      "defaultValue": "SetupChocolatey.ps1",
+      "defaultValue": "SetupChocolateyNoNewUser.ps1",
       "metadata": {
         "description": "PowerShell script name to execute"
       }
@@ -123,6 +93,7 @@
     }
   },
     "variables": {
+      "storageName": "[concat(uniquestring(resourceGroup().id), 'standardsa')]",
       "vnet01Prefix": "10.0.0.0/16",
       "vnet01Subnet1Name": "Subnet-1",
       "vnet01Subnet1Prefix": "10.0.0.0/24",
@@ -137,10 +108,10 @@
     },
     "resources": [
       {
-        "name": "[parameters('storageName')]",
+        "name": "[variables('storageName')]",
         "type": "Microsoft.Storage/storageAccounts",
-        "location": "[parameters('deployLocation')]",
-        "apiVersion": "2015-05-01-preview",
+        "location": "[resourceGroup().location]",
+        "apiVersion": "2015-06-15",
         "dependsOn": [ ],
         "tags": {
           "displayName": "Storage01"
@@ -152,8 +123,8 @@
       {
         "name": "VNet01",
         "type": "Microsoft.Network/virtualNetworks",
-        "location": "[parameters('deployLocation')]",
-        "apiVersion": "2015-05-01-preview",
+        "location": "[resourceGroup().location]",
+        "apiVersion": "2015-06-15",
         "dependsOn": [ ],
         "tags": {
           "displayName": "VNet01"
@@ -177,8 +148,8 @@
       {
         "name": "[variables('vmNicName')]",
         "type": "Microsoft.Network/networkInterfaces",
-        "location": "[parameters('deployLocation')]",
-        "apiVersion": "2015-05-01-preview",
+        "location": "[resourceGroup().location]",
+        "apiVersion": "2015-06-15",
         "dependsOn": [
           "[concat('Microsoft.Network/virtualNetworks/', 'Vnet01')]",
           "[concat('Microsoft.Network/publicIPAddresses/', variables('vmIP01Name'))]"
@@ -206,10 +177,10 @@
       {
         "name": "[parameters('vmName')]",
         "type": "Microsoft.Compute/virtualMachines",
-        "location": "[parameters('deployLocation')]",
-        "apiVersion": "2015-05-01-preview",
+        "location": "[resourceGroup().location]",
+        "apiVersion": "2015-06-15",
         "dependsOn": [
-          "[concat('Microsoft.Storage/storageAccounts/', parameters('storageName'))]",
+          "[concat('Microsoft.Storage/storageAccounts/', variables('storageName'))]",
           "[concat('Microsoft.Network/networkInterfaces/', variables('vmNicName'))]"
         ],
         "tags": {
@@ -234,7 +205,7 @@
             "osDisk": {
               "name": "VMOSDisk",
               "vhd": {
-                "uri": "[concat('http://', parameters('storageName'), '.blob.core.windows.net/', variables('vmStorageAccountContainerName'), '/', variables('vmOSDiskName'), '.vhd')]"
+                "uri": "[concat('http://', variables('storageName'), '.blob.core.windows.net/', variables('vmStorageAccountContainerName'), '/', variables('vmOSDiskName'), '.vhd')]"
               },
               "caching": "ReadWrite",
               "createOption": "FromImage"
@@ -252,7 +223,7 @@
           {
             "name": "SetupChocolatey",
             "type": "extensions",
-            "location": "[parameters('deployLocation')]",
+            "location": "[resourceGroup().location]",
             "apiVersion": "2015-06-15",
             "dependsOn": [
               "[concat('Microsoft.Compute/virtualMachines/', parameters('vmName'))]"
@@ -269,7 +240,7 @@
                 "fileUris": [
                   "[concat(parameters('setupChocolatelyScriptLocation'),parameters('setupChocolateyScriptFileName'))]"
                 ],
-                "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ',parameters('setupChocolateyScriptFileName'),' ',parameters('chocoPackages'),' ')]"
+                "commandToExecute": "[concat('powershell -ExecutionPolicy bypass -File ',parameters('setupChocolateyScriptFileName'),' -chocoPackages ',parameters('chocoPackages'))]"
               }
             }
           }
@@ -278,8 +249,8 @@
       {
         "name": "[variables('vmIP01Name')]",
         "type": "Microsoft.Network/publicIPAddresses",
-        "location": "[parameters('deployLocation')]",
-        "apiVersion": "2015-05-01-preview",
+        "location": "[resourceGroup().location]",
+        "apiVersion": "2015-06-15",
         "dependsOn": [ ],
         "tags": {
           "displayName": "VMIP01"
@@ -287,7 +258,7 @@
         "properties": {
           "publicIPAllocationMethod": "Dynamic",
           "dnsSettings": {
-            "domainNameLabel": "[parameters('vmIPPublicDnsName')]"
+            "domainNameLabel": "[parameters('dnsLabelPrefix')]"
           }
         }
       }
