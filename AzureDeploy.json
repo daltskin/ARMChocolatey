@@ -79,7 +79,7 @@
     },
     "setupChocolateyScriptFileName": {
       "type": "string",
-      "defaultValue": "SetupChocolateyNoNewUser.ps1",
+      "defaultValue": "SetupChocolatey.ps1",
       "metadata": {
         "description": "PowerShell script name to execute"
       }
